@@ -1,0 +1,115 @@
+{
+  "dataset": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.shp",
+  "layers": [
+    {
+      "layer": "MAHARASHTRA",
+      "count": 44659,
+      "crs_wkt": "PROJCS[\"LCC_WGS84\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"latitude_of_origin\",24],PARAMETER[\"central_meridian\",80],PARAMETER[\"standard_parallel_1\",12.472944],PARAMETER[\"standard_parallel_2\",35.172806],PARAMETER[\"false_easting\",4000000],PARAMETER[\"false_northing\",4000000],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+      "extent": [
+        3242642.6028999984,
+        4092691.8457000037,
+        3099134.0047000013,
+        3797212.3419999983
+      ],
+      "fields": [
+        {
+          "name": "OBJECTID_1",
+          "type": "Integer64",
+          "width": 10,
+          "precision": 0
+        },
+        {
+          "name": "MOD_OR_NOT",
+          "type": "String",
+          "width": 250,
+          "precision": 0
+        },
+        {
+          "name": "ORGI_Uniqu",
+          "type": "String",
+          "width": 25,
+          "precision": 0
+        },
+        {
+          "name": "STATE_UT",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "STATE_LGD",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Dist_LGD",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Sub_dist",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Subdis_LGD",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Subdis_Typ",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Vill_name",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Vill_cat",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Vill_LGD",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "District",
+          "type": "String",
+          "width": 50,
+          "precision": 0
+        },
+        {
+          "name": "Shape_Leng",
+          "type": "Real",
+          "width": 19,
+          "precision": 11
+        },
+        {
+          "name": "Shape_Area",
+          "type": "Real",
+          "width": 19,
+          "precision": 11
+        }
+      ],
+      "geometry_types": {
+        "POLYGON": 44558,
+        "MULTIPOLYGON": 101
+      },
+      "null_geometries": 0,
+      "exact_key_match_counts": {}
+    }
+  ],
+  "note": "Candidate matches do not establish cadastral identity. Select a layer and key explicitly."
+}

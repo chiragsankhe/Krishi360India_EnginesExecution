@@ -1,0 +1,146 @@
+{
+  "run_utc": "2026-10-31T22:16:11.971641+00:00",
+  "gdal": "3120000",
+  "source_files": [
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.cpg",
+      "bytes": 5,
+      "sha256": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.dbf",
+      "bytes": 36799530,
+      "sha256": "9ccf01058c0d65ffd6e0faca6b7c2682019db49d0f8d8f32b6bfaafc8ae07e1b"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.prj",
+      "bytes": 484,
+      "sha256": "f2cda3b9e845e55e62760d99ee2155285fa30b6f13531f42151e456d72b23aad"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.sbn",
+      "bytes": 453356,
+      "sha256": "769a1e09a1e35eb9a11e5f363abdd3bf9b9fd3bc97474e6897d1dba5976c1931"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.sbx",
+      "bytes": 30868,
+      "sha256": "4d975e03e734562a2abfbef797c576de587e2518dce41b04be617e52cceb58b7"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.shp",
+      "bytes": 205236412,
+      "sha256": "cc3c4076e9c80f4b11e941fe477fccd738fd3a08ffba23d2ae7a314f39114d51"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.shp.xml",
+      "bytes": 67201,
+      "sha256": "2666fb0c761b197e9d6ea37b49a8f5958fac9be785e055c263597f8e2573a192"
+    },
+    {
+      "path": "/Users/aj/Downloads/Village Boundary Data-Base_MAHARASHTRA/MAHARASHTRA.shx",
+      "bytes": 357372,
+      "sha256": "7cbfa53105e2e0e77a9bae6e53ecacebc813f702fe3998a5ea045bb3310078d1"
+    }
+  ],
+  "scope": "Administrative village boundaries only; not cadastral client plot boundaries",
+  "client_release_status": "BLOCKED_MISSING_SOURCE_FILES",
+  "unavailable_inputs": [
+    "01.Krishi360_Chandrapur_PoC_plot_level_monitoring_Cleaned_v2(1).xlsx",
+    "Krishi369.csv",
+    "Merge.gdb.zip",
+    "Chandrapur B04/B08 and supplied NDVI TIFFs"
+  ],
+  "search_evidence": {
+    "project_recursive": "Only manuals and earlier technical-data-requirements workbook present",
+    "local_search": "Documents, Downloads and temporary storage searched by relevant names/extensions; broader home search to depth 5 also attempted",
+    "referenced_chat": "read_thread returned conversation text and attachments=[]",
+    "current_chat_artifacts": "list_artifacts returned artifacts=[]"
+  },
+  "prior_chat_reported_only": {
+    "records": 87,
+    "unique_matches": 87,
+    "fields": 37,
+    "new_fields_including_UID": 38,
+    "survey_differences": [
+      "192/2/_ versus 192/2/?",
+      "175/2/_ versus 175/2/?"
+    ]
+  },
+  "independent_client_reconciliation": "Not performed. No original records accessible. Earlier 86-count explanation remains unresolved.",
+  "boundary_result": {
+    "maharashtra_features": 44659,
+    "Chandrapur_features_exported": 1837,
+    "invalid_source_geometries": 4,
+    "selection": "Python strip().upper() on District equals CHANDRAPUR",
+    "output": {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/actual_outputs/Chandrapur_villages_reference.geojson",
+      "bytes": 25222096,
+      "sha256": "57e89d848383f44eeb4bbf0720600f7ca8c1034bb5ae3fbf549bc49e6c312c0d"
+    },
+    "output_crs": "EPSG:4326",
+    "area_status": "No cadastral plot area or agricultural area inferred from village boundaries"
+  },
+  "tests": {
+    "run": 10,
+    "failures": 0,
+    "errors": 0,
+    "scope": "Synthetic fixtures only"
+  },
+  "boundary_verification": {
+    "reopened_features": 1837,
+    "all_district_attributes_Chandrapur": true,
+    "source_invalid_geometries": 4,
+    "missing_precision_metadata": "No cadastral survey accuracy established"
+  },
+  "excel_export_test": {
+    "result": "PASS",
+    "fixture": "SYNTHETIC ONLY",
+    "rows": 87,
+    "literal_header_count": 37,
+    "exact_cell_roundtrip": true,
+    "client_data_validated": false
+  },
+  "code_files": [
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/client.py",
+      "bytes": 7518,
+      "sha256": "08077b17bf0bf472636ebca3f3de6f32b73915a0a1db9698547dd00304f01c28"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/engines.py",
+      "bytes": 10419,
+      "sha256": "f4756dd60a6be7463dd2926e5f043fb4bdbbb7bf58bf19e92d641d26e8d8d82f"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/execute_available.py",
+      "bytes": 3434,
+      "sha256": "420a118f37e2ee086ea0338724051860a8f8e8049b66bd4555ffb2a15a922274"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/finalize.py",
+      "bytes": 9862,
+      "sha256": "55224761fb0c814e129f5a2be0c5d3b65eddf56cbcaeb8c76176c95bf72b756a"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/test_engines.py",
+      "bytes": 5720,
+      "sha256": "e5a10c3b759c91b42d5ad81dea9bc5ee61b546768338dd13725cfd0389f4cddc"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/test_export.py",
+      "bytes": 1366,
+      "sha256": "d131088c17ba4b7129f8217c8693545dfd9ccd799530e551caaca29196107d9b"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/exporter.mjs",
+      "bytes": 2090,
+      "sha256": "3b567558b6133edbe291970e2aac66b2eff496b53c73b1429219a7dbc4008406"
+    },
+    {
+      "path": "/Users/aj/Documents/ChatGPT/Krishi360/outputs/krishi360_execution/run_local.sh",
+      "bytes": 222,
+      "sha256": "e3c717a8bdbfd5713f580d1d1a0921de1f67fa8d3019766aac70687939333a0b"
+    }
+  ]
+}

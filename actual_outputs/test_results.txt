@@ -1,0 +1,15 @@
+test_87_reconciliation_two_exceptions_and_37_headers (test_engines.Engines.test_87_reconciliation_two_exceptions_and_37_headers) ... ok
+test_archive_safety_and_47_members (test_engines.Engines.test_archive_safety_and_47_members) ... ok
+test_duplicate_UUID_rejected (test_engines.Engines.test_duplicate_UUID_rejected) ... ok
+test_mismatched_band_grid_rejected (test_engines.Engines.test_mismatched_band_grid_rejected) ... ok
+test_missing_record_rejected (test_engines.Engines.test_missing_record_rejected) ... ok
+test_ndvi_values_and_mask_roundtrip (test_engines.Engines.test_ndvi_values_and_mask_roundtrip) ... ok
+test_offset_changes_ndvi (test_engines.Engines.test_offset_changes_ndvi) ... ok
+test_polygon_area_missing_and_duplicate_keys (test_engines.Engines.test_polygon_area_missing_and_duplicate_keys) ... ok
+test_supplied_grid_difference_not_compared (test_engines.Engines.test_supplied_grid_difference_not_compared) ... ok
+test_wrong_literal_header_rejected (test_engines.Engines.test_wrong_literal_header_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.248s
+
+OK

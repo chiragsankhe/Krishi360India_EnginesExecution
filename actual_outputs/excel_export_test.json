@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "fixture": "SYNTHETIC ONLY",
+  "rows": 87,
+  "literal_header_count": 37,
+  "exact_cell_roundtrip": true,
+  "client_data_validated": false
+}
