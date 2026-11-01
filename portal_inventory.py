@@ -11,9 +11,13 @@ are never written to the outputs:
   ARCGIS_TOKENS_JSON   path to (or literal) JSON list [{"server": "...", "token": "..."}] as /api/portal-tokens returns, or
   ARCGIS_USERNAME + ARCGIS_PASSWORD   a short-lived token is generated at PORTAL/sharing/rest/generateToken.
 
+A portal token is sent only to the portal host (its federated servers); other hosts are called anonymously.
+
 Usage:
   python portal_inventory.py --portal https://bmc3dmumbai.com/portal --webmap bf308acdb69c432fab3e44c292fd077f \
-      [--webscene WEBSCENE_ID] --out runs/RUN_ID/metadata/portal
+      [--webscene WEBSCENE_ID] [--export LAYER_URL ...] --out runs/RUN_ID/metadata/portal
+--export downloads every feature of a layer (native CRS Esri JSON, view-only EPSG:4326 GeoJSON, attribute CSV,
+manifest with counts and SHA256) into OUT/exports/. Layers above --max-features (default 5000) are refused.
 """
 import argparse, csv, json, os, re, sys
 from datetime import datetime, timezone
@@ -69,7 +73,11 @@ class Client:
         for server, token in self.tokens:
             if url.startswith(server) and (best is None or len(server) > len(best[0])):
                 best = (server, token)
-        return best[1] if best else self.default
+        if best:
+            return best[1]
+        # A portal token is only valid on the portal host and its federated servers. Other hosts (TGRAC, Esri
+        # Living Atlas) reject it with 498 even when the service itself is public, so they are called anonymously.
+        return self.default if urlsplit(url).netloc.lower() == urlsplit(self.portal).netloc.lower() else None
 
     def _open(self, req):
         req.add_header('Referer', self.portal)
@@ -80,10 +88,10 @@ class Client:
     def get(self, url, **params):
         params.setdefault('f', 'json')
         token = self.token_for(url)
-        if token:
-            params['token'] = token
         sep = '&' if '?' in url else '?'
-        data = self._open(Request(url + sep + urlencode(params)))
+        data = self._open(Request(url + sep + urlencode(dict(params, token=token) if token else params)))
+        if token and isinstance(data, dict) and (data.get('error') or {}).get('code') in (498, 499):
+            data = self._open(Request(url + sep + urlencode(params)))  # token not accepted here; try as public
         if isinstance(data, dict) and 'error' in data:
             e = data['error']
             raise RuntimeError(f"ArcGIS error {e.get('code')}: {e.get('message')} {e.get('details') or ''}".strip())
@@ -132,6 +140,13 @@ def describe_layer(c, url, meta):
             rat, err = safe(c.get, url + '/rasterAttributeTable')
             out['raster_attribute_table'] = ([f.get('attributes') for f in rat.get('features', [])] if rat else {'error': err})
         out['interpretation'] = interpret_image(out)
+    elif meta.get('type') == 'Raster Layer':  # raster inside a MapServer: no pixel type in its JSON
+        root, lid = url.rsplit('/', 1)
+        leg, err = safe(c.get, root + '/legend')
+        labels = next((x.get('legend') for x in (leg or {}).get('layers', []) if str(x.get('layerId')) == lid), None)
+        out['legend_labels'] = [x.get('label') for x in labels] if labels is not None else {'error': err}
+        out['pixel_probes'] = probe_pixels(c, root, lid, meta.get('extent'))
+        out['interpretation'] = interpret_map_raster(out['legend_labels'], out['pixel_probes'])
     elif meta.get('geometryType') or meta.get('type') in ('Feature Layer', 'Table'):
         cnt, err = safe(c.get, url + '/query', where='1=1', returnCountOnly='true')
         out['feature_count'] = cnt.get('count') if cnt else None
@@ -153,6 +168,43 @@ def interpret_image(info):
     if n and n > 1:
         return 'Multi-band. Check band names for B04/B08 reflectance before using as Engine 1 input.'
     return 'Undetermined; review metadata.'
+
+
+def probe_pixels(c, root, lid, extent):
+    """Identify five points (centre and quarter points of the layer extent) and return the reported pixel values."""
+    if not extent or extent.get('xmin') is None:
+        return {'error': 'No extent'}
+    x0, y0, x1, y1 = extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']
+    sr = extent.get('spatialReference') or {}
+    wkid = sr.get('latestWkid') or sr.get('wkid')
+    probes = []
+    for fx, fy in ((.5, .5), (.25, .25), (.75, .25), (.25, .75), (.75, .75)):
+        x, y = x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy
+        r, err = safe(c.get, root + '/identify', geometry=f'{x},{y}', geometryType='esriGeometryPoint', sr=wkid,
+                      layers=f'all:{lid}', tolerance=0, mapExtent=f'{x0},{y0},{x1},{y1}', imageDisplay='600,600,96',
+                      returnGeometry='false')
+        attrs = ((r or {}).get('results') or [{}])[0].get('attributes') if r else None
+        probes.append({'x': x, 'y': y, 'wkid': wkid, 'attributes': attrs, 'error': err})
+    return probes
+
+
+def interpret_map_raster(labels, probes):
+    """Classified or continuous, judged from the stored pixel values first and the legend second."""
+    values = []
+    for p in probes if isinstance(probes, list) else []:
+        v = (p.get('attributes') or {}).get('Pixel Value')
+        try:
+            values.append(float(v))
+        except (TypeError, ValueError):
+            pass
+    if values and any(not v.is_integer() for v in values):
+        return f'Continuous pixel values ({len(values)} probes, e.g. {values[0]}). Possibly NDVI; confirm range/provider.'
+    text = ' '.join(str(x) for x in labels) if isinstance(labels, list) else ''
+    if values and all(v.is_integer() for v in values) and not re.search(r'high|low', text, re.I):
+        return f'Integer pixel values {sorted(set(values))} with legend {labels}: probably classified, not continuous NDVI.'
+    if re.search(r'high|low', text, re.I):
+        return 'Stretched legend (continuous display); no non-integer probe value confirms stored continuous NDVI.'
+    return 'Undetermined (no readable probe values); review legend and source.'
 
 
 def inspect_url(c, url):
@@ -202,6 +254,65 @@ def inventory_item(c, item_id, out):
     return {'item': {k: item.get(k) for k in ('id', 'title', 'type', 'owner', 'modified')}, 'layers': rows}
 
 
+def sha256(path):
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def export_layer(c, url, out, max_features=5000, batch=200):
+    """Download every feature of one layer: native-CRS Esri JSON (for area work), server-reprojected EPSG:4326
+    GeoJSON (viewing only) and an attribute CSV, plus a manifest with counts and hashes. Read-only."""
+    url = redact(url).rstrip('/')
+    meta = c.get(url)
+    ids = c.get(url + '/query', where='1=1', returnIdsOnly='true')
+    oids = sorted(ids.get('objectIds') or [])
+    if len(oids) > max_features:
+        raise ValueError(f'{len(oids)} features exceeds --max-features {max_features}; export a filtered subset instead')
+    feats, gj, sr, gj_err = [], [], None, None
+    for i in range(0, len(oids), batch):
+        part = ','.join(map(str, oids[i:i + batch]))
+        r = c.get(url + '/query', objectIds=part, outFields='*', returnGeometry='true')
+        feats += r.get('features') or []
+        sr = sr or r.get('spatialReference')
+        if gj_err is None:
+            g, gj_err = safe(c.get, url + '/query', objectIds=part, outFields='*', returnGeometry='true', outSR=4326, f='geojson')
+            gj += (g or {}).get('features') or []
+    name = re.sub(r'\W+', '_', meta.get('name') or 'layer').strip('_')
+    dest = out / 'exports'
+    dest.mkdir(parents=True, exist_ok=True)
+    fields = [f['name'] for f in meta.get('fields') or []]
+    files = {}
+    p = dest / f'{name}.esri.json'
+    p.write_text(json.dumps({'source_url': url, 'name': meta.get('name'), 'geometryType': meta.get('geometryType'),
+                             'spatialReference': sr, 'fields': meta.get('fields'), 'objectIdField': ids.get('objectIdFieldName'),
+                             'features': feats}, indent=1, default=str))
+    files['esri_json_native_crs'] = p
+    p = dest / f'{name}_attributes.csv'
+    with p.open('w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(fields)
+        for ft in feats:
+            a = ft.get('attributes') or {}
+            w.writerow([a.get(k) for k in fields])
+    files['attributes_csv'] = p
+    if gj_err is None:
+        p = dest / f'{name}_EPSG4326_view_only.geojson'
+        p.write_text(json.dumps({'type': 'FeatureCollection', 'features': gj}))
+        files['geojson_epsg4326_view_only'] = p
+    got = sorted((ft.get('attributes') or {}).get(ids.get('objectIdFieldName')) for ft in feats)
+    manifest = {'run_utc': datetime.now(timezone.utc).isoformat(), 'source_url': url, 'layer_name': meta.get('name'),
+                'object_ids_reported': len(oids), 'features_exported': len(feats),
+                'all_object_ids_exported_once': got == oids,
+                'null_geometries': sum(1 for ft in feats if not ft.get('geometry')),
+                'native_spatial_reference': sr, 'geojson_error': gj_err,
+                'date_fields_note': 'esriFieldTypeDate values are epoch milliseconds (UTC) as returned by the service.',
+                'limitation': 'Exported from a hosted service, not the original Merge.gdb. Use the native-CRS Esri JSON for '
+                              'geometry and area work; the EPSG:4326 GeoJSON is server-reprojected for viewing only.',
+                'files': {k: {'path': v.name, 'bytes': v.stat().st_size, 'sha256': sha256(v)} for k, v in files.items()}}
+    (dest / f'{name}_export_manifest.json').write_text(json.dumps(manifest, indent=2, default=str))
+    return manifest
+
+
 def flat_rows(results):
     for res in results:
         for n in res['layers']:
@@ -211,6 +322,7 @@ def flat_rows(results):
                        'layer_type': n['layer_type'], 'service_url': s.get('url') or n.get('url'), 'service_type': s.get('service_type'),
                        'name': s.get('name'), 'geometry_type': s.get('geometry_type'),
                        'wkid': ((s.get('spatial_reference') or {}).get('latestWkid') or (s.get('spatial_reference') or {}).get('wkid')),
+                       **{k: (s.get('extent') or {}).get(k) for k in ('xmin', 'ymin', 'xmax', 'ymax')},
                        'feature_count': s.get('feature_count'), 'field_count': len(s.get('fields') or []) or None,
                        'candidate_id_fields': ';'.join(s.get('candidate_id_fields') or []),
                        'pixel_type': s.get('pixel_type'), 'band_count': s.get('band_count'),
@@ -221,13 +333,27 @@ def flat_rows(results):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--portal', required=True)
-    p.add_argument('--webmap', required=True)
+    p.add_argument('--webmap')
     p.add_argument('--webscene')
+    p.add_argument('--export', action='append', default=[], metavar='LAYER_URL',
+                   help='Download all features of this layer (repeatable), e.g. .../Hosted/Cadastral_V2/FeatureServer/7')
+    p.add_argument('--max-features', type=int, default=5000, help='Refuse to export layers larger than this')
     p.add_argument('--out', required=True, help='New output folder')
     a = p.parse_args(argv)
+    if not a.webmap and not a.export:
+        p.error('give --webmap and/or --export')
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     c = Client(a.portal)
+    failed = False
+    for url in a.export:
+        m, err = safe(export_layer, c, url, out, a.max_features)
+        print(json.dumps({'export': redact(url), 'error': err} if err else
+                         {k: m[k] for k in ('layer_name', 'object_ids_reported', 'features_exported',
+                                            'all_object_ids_exported_once', 'null_geometries', 'geojson_error')}, default=str))
+        failed = failed or err is not None or not m['all_object_ids_exported_once']
+    if not a.webmap:
+        return 3 if failed else 0
     results = []
     for item_id in [a.webmap] + ([a.webscene] if a.webscene else []):
         res, err = safe(inventory_item, c, item_id, out)
@@ -247,7 +373,7 @@ def main(argv=None):
                       'maharashtra_or_ccmc': [{k: r[k] for k in ('path', 'service_type', 'geometry_type', 'feature_count',
                                                                  'pixel_type', 'candidate_id_fields', 'error')} for r in mh],
                       'errors': sum(1 for r in rows if r['error'])}, indent=2, default=str))
-    return 0
+    return 3 if failed else 0
 
 
 if __name__ == '__main__':
